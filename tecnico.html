@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitetura de Pagamento FoodFast</title>
+<meta name="description" content="Como a arquitetura de microsserviços do FoodFast isola o risco de dados de pagamento — LGPD e PCI-DSS na prática. Grupo 5, Compliance, FAMINAS.">
+<meta property="og:title" content="Arquitetura de Pagamento FoodFast">
+<meta property="og:description" content="Tokenização, isolamento de microsserviços e falha fechada — a defesa do Grupo 5 no Tribunal de Compliance.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<style>
+  :root {
+    --paper:      #EDF0EE;
+    --surface:    #FFFFFF;
+    --surface-2:  #E3E9E6;
+    --ink:        #101816;
+    --ink-2:      #384643;
+    --muted:      #66756F;
+    --line:       #CDD7D3;
+    --line-2:     #B6C4BF;
+    --accent:     #0B5D4E;
+    --accent-2:   #10826B;
+    --on-accent:  #F2F7F5;
+    --exposed:    #A8321F;
+    --exposed-bg: #FAEAE6;
+    --exposed-ln: #E3BDB3;
+    --safe-bg:    #E2EFEA;
+
+    --font-sans:  "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-mono:  "IBM Plex Mono", "SF Mono", Consolas, monospace;
+
+    --measure: 66ch;
+    --wide: 1120px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0B1110;
+      --surface:    #131C1A;
+      --surface-2:  #1A2523;
+      --ink:        #E9EEEC;
+      --ink-2:      #B2BFBB;
+      --muted:      #7C8C86;
+      --line:       #26332F;
+      --line-2:     #34443F;
+      --accent:     #4ECFAD;
+      --accent-2:   #7FE5C9;
+      --on-accent:  #08211B;
+      --exposed:    #FF8168;
+      --exposed-bg: #2B1512;
+      --exposed-ln: #5A2C24;
+      --safe-bg:    #10241E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0B1110;
+    --surface:    #131C1A;
+    --surface-2:  #1A2523;
+    --ink:        #E9EEEC;
+    --ink-2:      #B2BFBB;
+    --muted:      #7C8C86;
+    --line:       #26332F;
+    --line-2:     #34443F;
+    --accent:     #4ECFAD;
+    --accent-2:   #7FE5C9;
+    --on-accent:  #08211B;
+    --exposed:    #FF8168;
+    --exposed-bg: #2B1512;
+    --exposed-ln: #5A2C24;
+    --safe-bg:    #10241E;
+  }
+
+  /* reset */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body, h1, h2, h3, h4, p, figure, blockquote, dl, dd, pre { margin: 0; }
+  img, svg { max-width: 100%; display: block; }
+  button { font: inherit; }
+  table { border-collapse: collapse; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--wide);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .prose { max-width: var(--measure); }
+
+  h1, h2, h3 { text-wrap: balance; line-height: 1.12; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); font-weight: 700; }
+  h2 { font-size: clamp(1.5rem, 3.2vw, 2.05rem); font-weight: 700; }
+  h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.005em; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  a { color: var(--accent); }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .band { padding: 68px 0; border-top: 1px solid var(--line); }
+  .band-head { display: flex; flex-direction: column; gap: 14px; max-width: var(--measure); margin-bottom: 36px; }
+  .band-head p { color: var(--ink-2); }
+
+  .hero { padding: 76px 0 72px; }
+  .hero-grid { display: flex; flex-direction: column; gap: 34px; }
+  .hero h1 { max-width: 17ch; }
+  .hero-lede { color: var(--ink-2); font-size: 1.12rem; max-width: 54ch; }
+
+  .morph {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 26px 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 640px;
+    overflow-x: auto;
+  }
+  .morph-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--exposed);
+    transition: color 0.4s ease;
+  }
+  .morph-label.done { color: var(--accent); }
+  .morph-value {
+    font-family: var(--font-mono);
+    font-size: clamp(1.15rem, 4vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--exposed);
+    white-space: nowrap;
+    transition: color 0.4s ease;
+  }
+  .morph-value.done { color: var(--accent); }
+  .morph-note { font-size: 0.92rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 12px; }
+
+  .card-quote {
+    border-left: 3px solid var(--accent);
+    padding: 4px 0 4px 20px;
+    max-width: var(--measure);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card-quote q {
+    font-family: var(--font-serif);
+    font-size: 1.06rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    font-style: italic;
+  }
+
+  .flow { display: flex; flex-direction: column; }
+  .step {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 20px;
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+  }
+  .step:last-child { border-bottom: 1px solid var(--line); }
+  .step-n {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+    padding-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .step-body { display: flex; flex-direction: column; gap: 9px; }
+  .step-body p { color: var(--ink-2); font-size: 0.96rem; max-width: 62ch; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.02em;
+    padding: 4px 9px;
+    border-radius: 2px;
+    width: fit-content;
+    border: 1px solid transparent;
+  }
+  .chip::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+  .chip-hot  { color: var(--exposed); background: var(--exposed-bg); border-color: var(--exposed-ln); }
+  .chip-cold { color: var(--accent); background: var(--safe-bg); border-color: var(--line-2); }
+  .chip-none { color: var(--muted); background: var(--surface-2); border-color: var(--line); }
+
+  .sim-btn {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 2px;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: background 0.18s ease;
+    width: fit-content;
+  }
+  .sim-btn:hover { background: var(--accent-2); }
+  .sim-btn[aria-pressed="true"] { background: var(--ink-2); }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 28px;
+  }
+  @media (min-width: 860px) { .panels { grid-template-columns: 1fr 1fr; } }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-hot { border-color: var(--exposed-ln); }
+  .panel-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .panel-hot .panel-head { border-bottom-color: var(--exposed-ln); background: var(--exposed-bg); }
+  .panel-cold .panel-head { background: var(--safe-bg); }
+  .panel-title { font-size: 0.95rem; font-weight: 600; }
+  .panel-sub { font-size: 0.8rem; color: var(--muted); }
+  .panel-hot .panel-sub { color: var(--exposed); }
+
+  .dump {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.75;
+    padding: 16px 18px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--ink-2);
+    min-height: 190px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dump .hot { color: var(--exposed); font-weight: 500; }
+  .dump .cold { color: var(--accent); font-weight: 500; }
+  .dump .dim { color: var(--muted); }
+  .dump-idle { color: var(--muted); }
+
+  .verdict {
+    margin-top: 26px;
+    font-size: clamp(1.15rem, 2.6vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    max-width: 28ch;
+    line-height: 1.25;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.2s;
+  }
+  .verdict.show { opacity: 1; }
+  .verdict em { font-style: normal; color: var(--accent); }
+
+  .schema-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  @media (min-width: 860px) { .schema-grid { grid-template-columns: 1fr 1fr; } }
+  .schema {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .schema-name { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; color: var(--accent); }
+  .schema-cols { display: flex; flex-direction: column; gap: 5px; font-family: var(--font-mono); font-size: 0.78rem; }
+  .schema-cols span { color: var(--ink-2); white-space: nowrap; }
+  .schema-cols .absent { color: var(--exposed); text-decoration: line-through; text-decoration-thickness: 1px; opacity: 0.85; }
+  .schema-foot { font-size: 0.84rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 11px; }
+
+  .log {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.9;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px;
+    margin-top: 26px;
+    overflow-x: auto;
+    white-space: pre;
+    min-height: 250px;
+    color: var(--ink-2);
+  }
+  .log .ok { color: var(--accent); }
+  .log .fail { color: var(--exposed); font-weight: 500; }
+  .log .ts { color: var(--muted); }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); }
+  table { width: 100%; min-width: 620px; }
+  th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  th {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    background: var(--surface-2);
+  }
+  td { font-size: 0.92rem; color: var(--ink-2); }
+  td.art {
+    font-family: var(--font-serif);
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 0.95rem;
+  }
+  td.art small { display: block; font-weight: 400; font-style: italic; color: var(--muted); font-size: 0.84rem; margin-top: 2px; }
+
+  .law {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    max-width: var(--measure);
+  }
+  .law-text { font-family: var(--font-serif); font-size: 1rem; line-height: 1.6; color: var(--ink-2); }
+  .law-cite { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+  .duo { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 860px) { .duo { grid-template-columns: 1fr 1fr; } }
+  .box {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .box p { font-size: 0.94rem; color: var(--ink-2); }
+  .box .snippet {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: var(--surface-2);
+    padding: 14px;
+    border-radius: 2px;
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  .gates { display: flex; flex-direction: column; margin-top: 4px; }
+  .gate {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    align-items: baseline;
+  }
+  .gate-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  footer { border-top: 1px solid var(--line); padding: 44px 0 60px; }
+  .foot-grid { display: flex; flex-direction: column; gap: 10px; }
+  .foot-grid p { font-size: 0.88rem; color: var(--muted); max-width: var(--measure); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-grid">
+      <p class="eyebrow">Grupo 5 &middot; Terceirização e APIs de pagamento &middot; FAMINAS</p>
+      <h1>O cartão nunca chega ao nosso banco de dados.</h1>
+      <p class="hero-lede">Como a arquitetura de microsserviços do FoodFast isola o risco de pagamento — e por que isso não é só boa prática, é o que a LGPD exige.</p>
+
+      <div class="morph" id="morph">
+        <span class="morph-label" id="morphLabel">Dado do titular &middot; PAN + CVV</span>
+        <span class="morph-value" id="morphValue">4532 1145 8899 0012</span>
+        <span class="morph-note" id="morphNote">O número real do cartão, digitado pelo usuário.</span>
+      </div>
+
+      <div class="card-quote">
+        <p class="eyebrow">Cartão surpresa</p>
+        <q>O sistema vai integrar uma API de pagamento de terceiros que vai armazenar os dados do cartão de crédito. A LGPD e o PCI-DSS entram em choque se os dados trafegarem sem criptografia. Como a arquitetura de microsserviços de vocês isola esse risco?</q>
+      </div>
+    </div>
+  </header>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">O fluxo do sistema</p>
+      <h2>Onde o dado entra, por onde passa, onde para</h2>
+      <p>Seis saltos. Acompanhe a etiqueta em cada um: ela diz exatamente qual dado existe naquele ponto do sistema.</p>
+    </div>
+
+    <div class="flow">
+      <div class="step">
+        <span class="step-n">01</span>
+        <div class="step-body">
+          <h3>O usuário digita o cartão no app</h3>
+          <p>O campo não é nosso. É um componente do SDK do gateway, renderizado dentro do app — o dado é capturado já dentro do domínio do operador certificado.</p>
+          <span class="chip chip-hot">PAN + CVV + validade</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-n">02</span>
+        <div class="step-body">
+          <h3>TLS 1.3 direto do celular para o gateway</h3>
+          <p>O dado sai criptografado do dispositivo e vai <em>direto</em> ao gateway. Não passa pelo backend do FoodFast em momento nenhum — nem de passagem, nem em log.</p>
+          <span class="chip chip-hot">PAN criptografado em trânsito</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-n">03</span>
+        <div class="step-body">
+          <h3>O gateway tokeniza e devolve um identificador</h3>
+          <p>O cartão fica no cofre do operador — que é quem carrega a certificação PCI-DSS e a auditoria correspondente. Voltam para nós apenas um token, a bandeira e os quatro últimos dígitos.</p>
+          <span class="chip chip-cold">tok_9f8a3b7c2e &middot; visa &middot; 0012</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-n">04</span>
+        <div class="step-body">
+          <h3>O API Gateway do FoodFast recebe só o token</h3>
+          <p>Requisição autenticada, com o token já no lugar do cartão. A partir daqui, não existe mais dado de cartão dentro do nosso perímetro.</p>
+          <span class="chip chip-cold">token + id do pedido</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-n">05</span>
+        <div class="step-body">
+          <h3>Microsserviço de Pagamento — banco próprio, credencial própria</h3>
+          <p>É o único serviço autorizado a falar com o gateway e o único com credencial no banco de pagamento. Nenhum outro serviço do FoodFast tem rota de rede ou senha para chegar aqui.</p>
+          <span class="chip chip-cold">token, bandeira, últimos 4, status</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-n">06</span>
+        <div class="step-body">
+          <h3>O serviço de Pedidos pergunta, não consulta</h3>
+          <p>Para saber se o pedido #4471 foi pago, o serviço de Pedidos chama uma API do serviço de Pagamento e recebe de volta um booleano. Ele nunca abre uma conexão com o banco de pagamento — porque não tem como.</p>
+          <span class="chip chip-none">pago: true &middot; nada além disso</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">Demonstração &middot; o pior cenário</p>
+      <h2>E se o banco de dados vazar inteiro?</h2>
+      <p>Não vamos afirmar que a arquitetura protege. Rode o ataque e compare o que o invasor leva embora em cada desenho.</p>
+    </div>
+
+    <button class="sim-btn" id="breachBtn" aria-pressed="false">Simular invasão no banco de dados</button>
+
+    <div class="panels">
+      <div class="panel panel-hot">
+        <div class="panel-head">
+          <span class="panel-title">Arquitetura ingênua</span>
+          <span class="panel-sub">banco único &middot; tudo na mesma base</span>
+        </div>
+        <pre class="dump" id="dumpHot"><span class="dump-idle">Aguardando execução do ataque.</span></pre>
+      </div>
+
+      <div class="panel panel-cold">
+        <div class="panel-head">
+          <span class="panel-title">Arquitetura do Grupo 5</span>
+          <span class="panel-sub">microsserviço isolado &middot; base própria</span>
+        </div>
+        <pre class="dump" id="dumpCold"><span class="dump-idle">Aguardando execução do ataque.</span></pre>
+      </div>
+    </div>
+
+    <p class="verdict" id="verdict">O atacante levou o banco inteiro. <em>E não levou nada.</em></p>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">A prova no schema</p>
+      <h2>A coluna que decidimos não criar</h2>
+      <p>Privacy by Design não é um adjetivo que se coloca na apresentação. É uma decisão que aparece — ou não aparece — no <code>CREATE TABLE</code>. A nossa aparece como ausência.</p>
+    </div>
+
+    <div class="schema-grid">
+      <div class="schema">
+        <span class="schema-name">pagamentos &nbsp;<span style="color:var(--exposed)">— como quase todo mundo faria</span></span>
+        <div class="schema-cols">
+          <span>id                BIGINT PK</span>
+          <span>pedido_id         BIGINT FK</span>
+          <span class="absent">numero_cartao     VARCHAR(19)</span>
+          <span class="absent">cvv               VARCHAR(4)</span>
+          <span class="absent">validade          VARCHAR(5)</span>
+          <span class="absent">titular_cartao    VARCHAR(120)</span>
+          <span>valor             DECIMAL(10,2)</span>
+          <span>status            VARCHAR(20)</span>
+        </div>
+        <p class="schema-foot">Quatro colunas que colocam o sistema inteiro dentro do escopo de auditoria do PCI-DSS — e que viram manchete no dia do vazamento.</p>
+      </div>
+
+      <div class="schema">
+        <span class="schema-name">pagamentos &nbsp;<span style="color:var(--accent)">— o nosso</span></span>
+        <div class="schema-cols">
+          <span>id                BIGINT PK</span>
+          <span>pedido_id         BIGINT FK</span>
+          <span>token_gateway     VARCHAR(64)</span>
+          <span>bandeira          VARCHAR(20)</span>
+          <span>ultimos_quatro    CHAR(4)</span>
+          <span>valor             DECIMAL(10,2)</span>
+          <span>status            VARCHAR(20)</span>
+          <span>criado_em         TIMESTAMPTZ</span>
+        </div>
+        <p class="schema-foot">O usuário reconhece o cartão dele pelos últimos quatro dígitos. A finalidade é atendida por inteiro sem que o dado sensível exista aqui.</p>
+      </div>
+    </div>
+
+    <div class="law" style="margin-top:26px">
+      <p class="law-text">O tratamento de dados deve se limitar ao mínimo necessário para a realização de suas finalidades, com abrangência dos dados pertinentes, proporcionais e não excessivos.</p>
+      <p class="law-cite">LGPD &middot; Art. 6º, III — princípio da necessidade</p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">Demonstração &middot; falha controlada</p>
+      <h2>E quando a criptografia falha?</h2>
+      <p>É a pergunta literal do nosso cartão. Um sistema mal desenhado, diante de uma falha, confirma o pagamento mesmo assim. O nosso trava e desfaz.</p>
+    </div>
+
+    <button class="sim-btn" id="tlsBtn" aria-pressed="false">Forçar falha de TLS na chamada ao gateway</button>
+
+    <pre class="log" id="tlsLog"><span class="dump-idle">Aguardando execução.</span></pre>
+
+    <div class="law" style="margin-top:26px">
+      <p class="law-text">O sistema falha fechado: nenhuma transação é confirmada sem resposta autenticada do gateway por canal criptografado. Na dúvida, o pedido permanece pendente e a transação sofre <em>rollback</em> — nunca o contrário.</p>
+      <p class="law-cite">LGPD &middot; Art. 6º, VIII — princípio da prevenção</p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">A pergunta que vão fazer</p>
+      <h2>Se o gateway for hackeado, de quem é a culpa?</h2>
+    </div>
+
+    <div class="duo">
+      <div class="box">
+        <p class="eyebrow" style="color:var(--accent)">FoodFast</p>
+        <h3>Controlador</h3>
+        <p>Somos nós que decidimos <em>o quê</em>, <em>como</em> e <em>por quê</em> o dado é tratado. Não tocamos no cartão em momento nenhum — e ainda assim a decisão de cobrar, e a escolha de qual operador usar, é nossa. Art. 5º, VI.</p>
+      </div>
+      <div class="box">
+        <p class="eyebrow" style="color:var(--accent)">Gateway de pagamento</p>
+        <h3>Operador</h3>
+        <p>Executa o tratamento seguindo as nossas instruções: guarda o cartão, tokeniza, cobra, confirma. Não define finalidade própria sobre aquele dado. Art. 5º, VII.</p>
+      </div>
+    </div>
+
+    <div class="law" style="margin-top:22px">
+      <p class="law-text">O controlador ou o operador que, em razão do exercício de atividade de tratamento de dados pessoais, causar a outrem dano patrimonial, moral, individual ou coletivo, é obrigado a repará-lo.</p>
+      <p class="law-cite">LGPD &middot; Art. 42 — responsabilidade e ressarcimento de danos</p>
+    </div>
+
+    <p class="prose" style="margin-top:22px; color:var(--ink-2)">Terceirizar o tratamento não terceiriza a responsabilidade. Se o operador vazar, o titular pode acionar o FoodFast — e a nossa defesa não é dizer que a culpa é do outro, é demonstrar as medidas que adotamos: escolha de operador certificado PCI-DSS, contrato com cláusulas de proteção de dados, TLS obrigatório, isolamento do serviço e ausência de dado sensível na nossa base.</p>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">Fundamento legal</p>
+      <h2>Cada decisão técnica, e o artigo que a exige</h2>
+      <p>Nenhuma escolha aqui foi feita por gosto de engenharia. Todas respondem a um dispositivo da Lei 13.709/2018.</p>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Decisão na arquitetura</th>
+            <th scope="col">Fundamento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Não armazenar o número do cartão — a finalidade é atendida com o token</td>
+            <td class="art">Art. 6º, III<small>necessidade</small></td>
+          </tr>
+          <tr>
+            <td>TLS 1.3 obrigatório, banco isolado, credencial exclusiva do serviço de Pagamento</td>
+            <td class="art">Art. 6º, VII &middot; Art. 46<small>segurança</small></td>
+          </tr>
+          <tr>
+            <td><em>Rollback</em> e falha fechada quando a chamada segura não se completa</td>
+            <td class="art">Art. 6º, VIII<small>prevenção</small></td>
+          </tr>
+          <tr>
+            <td>FoodFast como controlador, gateway como operador, com contrato de tratamento</td>
+            <td class="art">Art. 5º, VI e VII<small>papéis</small></td>
+          </tr>
+          <tr>
+            <td>Respondemos junto com o operador — por isso auditamos quem contratamos</td>
+            <td class="art">Art. 42<small>responsabilidade</small></td>
+          </tr>
+          <tr>
+            <td>Plano de resposta a incidente: comunicar ANPD e titulares em prazo razoável</td>
+            <td class="art">Art. 48<small>comunicação de incidente</small></td>
+          </tr>
+          <tr>
+            <td>Exportar e excluir os dados do titular — sem tocar no cofre do operador</td>
+            <td class="art">Art. 18<small>direitos do titular</small></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <p class="eyebrow">Como isso vira processo</p>
+      <h2>A decisão e a garantia de que ela sobrevive</h2>
+    </div>
+
+    <div class="duo">
+      <div class="box">
+        <p class="eyebrow" style="color:var(--accent)">Privacy by Design</p>
+        <h3>A restrição nasce junto com o requisito</h3>
+        <p>A história de usuário do módulo de pagamento não foi escrita como “o usuário cadastra o cartão”. Foi escrita já com a restrição anexada:</p>
+        <p class="snippet">“O usuário cadastra a forma de pagamento — o dado deve ser tokenizado via gateway PCI-DSS, nunca persistido em texto puro, e o PAN não pode aparecer em nenhum log.”</p>
+        <p>Segurança não entrou como revisão no fim do projeto. Entrou como critério de aceite do requisito, antes da primeira linha de código.</p>
+      </div>
+
+      <div class="box">
+        <p class="eyebrow" style="color:var(--accent)">DevSecOps</p>
+        <h3>Portões automáticos, no ritmo da entrega</h3>
+        <p>Entrega contínua só é segura se os controles rodarem na mesma velocidade dela. Cada commit passa por:</p>
+        <div class="gates">
+          <div class="gate"><span class="gate-tag">secret scan</span><span>bloqueia o merge se uma chave de API ou algo com formato de PAN aparecer no código ou em log.</span></div>
+          <div class="gate"><span class="gate-tag">SAST</span><span>análise estática do serviço de Pagamento a cada push.</span></div>
+          <div class="gate"><span class="gate-tag">dependências</span><span>varredura de CVE nas bibliotecas — a porta de entrada mais comum em invasão real.</span></div>
+          <div class="gate"><span class="gate-tag">teste de auth</span><span>falha o build se qualquer rota de pagamento responder sem autenticação.</span></div>
+          <div class="gate"><span class="gate-tag">menor privilégio</span><span>só o serviço de Pagamento tem rota de saída para o gateway.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-grid">
+      <p><a href="./index.html" style="font-weight:600; text-decoration:none">&larr; Voltar para a explicação sem palavra difícil</a></p>
+      <p class="eyebrow">Grupo 5 &middot; Compliance &middot; Prof. Lucas de Castro Miguel</p>
+      <p>Material de apoio da apresentação “O Grande Vazamento: quem paga a conta?”. Cenário FoodFast — delivery universitário. Referências: Lei nº 13.709/2018 (LGPD) e PCI-DSS v4.0.</p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var value = document.getElementById("morphValue");
+  var label = document.getElementById("morphLabel");
+  var note  = document.getElementById("morphNote");
+  var FROM = "4532 1145 8899 0012";
+  var TO   = "tok_9f8a3b7c2e";
+  var POOL = "0123456789abcdef";
+
+  function settle() {
+    value.textContent = TO;
+    value.classList.add("done");
+    label.classList.add("done");
+    label.textContent = "Identificador opaco · token do gateway";
+    note.textContent = "Sem valor fora do gateway. É o que guardamos no nosso banco.";
+  }
+
+  function scramble() {
+    var len = Math.max(FROM.length, TO.length);
+    var frame = 0;
+    var total = 42;
+    var id = setInterval(function () {
+      frame++;
+      var out = "";
+      var revealed = Math.floor((frame / total) * TO.length);
+      for (var i = 0; i < len; i++) {
+        if (i < revealed) {
+          out += TO[i] || "";
+        } else if (i < TO.length + 3) {
+          out += POOL[Math.floor(Math.random() * POOL.length)];
+        }
+      }
+      value.textContent = out;
+      if (frame >= total) { clearInterval(id); settle(); }
+    }, 34);
+  }
+
+  if (reduce) { settle(); } else { setTimeout(scramble, 1100); }
+
+  var HOT =
+    '<span class="dim">$ mysqldump foodfast_db --all-tables</span>\n' +
+    '<span class="dim">-- 1 base, 14 tabelas, 48.219 registros</span>\n\n' +
+    '<span class="dim">id   nome             cpf              cartao                cvv  val</span>\n' +
+    '<span class="hot">881  Ana Ribeiro      123.456.789-00   4532 1145 8899 0012   342  08/29</span>\n' +
+    '<span class="hot">882  Bruno Tavares    987.654.321-00   5412 7788 1120 4455   907  11/27</span>\n' +
+    '<span class="hot">883  Carla Menezes    456.789.012-00   4024 0071 5566 8890   118  02/30</span>\n\n' +
+    '<span class="dim">endereco_entrega, historico_pedidos, geolocalizacao</span>\n' +
+    '<span class="hot">→ exportados na íntegra</span>\n\n' +
+    '<span class="hot">■ incidente de risco relevante · Art. 48 acionado</span>';
+
+  var COLD =
+    '<span class="dim">$ mysqldump pagamento_db --all-tables</span>\n' +
+    '<span class="dim">-- 1 base isolada, 3 tabelas</span>\n\n' +
+    '<span class="dim">id   pedido   token             band.   last4  status</span>\n' +
+    '<span class="cold">881  #4471    tok_9f8a3b7c2e    visa    0012   pago</span>\n' +
+    '<span class="cold">882  #4472    tok_2c7d1e9a44    master  4455   pago</span>\n' +
+    '<span class="cold">883  #4473    tok_5b1f8c0d73    visa    8890   pago</span>\n\n' +
+    '<span class="dim">$ mysqldump usuarios_db</span>\n' +
+    '<span class="cold">→ acesso negado: credencial não existe neste serviço</span>\n' +
+    '<span class="dim">$ mysqldump pedidos_db</span>\n' +
+    '<span class="cold">→ acesso negado: sem rota de rede a partir daqui</span>';
+
+  function typeInto(el, html, done) {
+    if (reduce) { el.innerHTML = html; if (done) done(); return; }
+    var lines = html.split("\n");
+    var i = 0;
+    el.innerHTML = "";
+    var id = setInterval(function () {
+      el.innerHTML += lines[i] + "\n";
+      el.scrollTop = el.scrollHeight;
+      i++;
+      if (i >= lines.length) { clearInterval(id); if (done) done(); }
+    }, 55);
+  }
+
+  var breachBtn = document.getElementById("breachBtn");
+  var verdict = document.getElementById("verdict");
+  breachBtn.addEventListener("click", function () {
+    breachBtn.setAttribute("aria-pressed", "true");
+    breachBtn.textContent = "Rodando ataque…";
+    verdict.classList.remove("show");
+    typeInto(document.getElementById("dumpHot"), HOT);
+    typeInto(document.getElementById("dumpCold"), COLD, function () {
+      verdict.classList.add("show");
+      breachBtn.textContent = "Rodar novamente";
+      breachBtn.setAttribute("aria-pressed", "false");
+    });
+  });
+
+  var TLS =
+    '<span class="ts">[00:00.000]</span> POST /pagamentos/cobranca · pedido #4473\n' +
+    '<span class="ts">[00:00.004]</span> BEGIN TRANSACTION\n' +
+    '<span class="ts">[00:00.006]</span> pedido #4473 → status: <span class="ok">PENDENTE</span>\n' +
+    '<span class="ts">[00:00.011]</span> abrindo conexão com gateway de pagamento…\n' +
+    '<span class="ts">[00:00.288]</span> handshake TLS <span class="fail">FALHOU</span> — certificado do peer inválido\n' +
+    '<span class="ts">[00:00.289]</span> <span class="fail">chamada abortada · nenhum byte trafegou em texto claro</span>\n' +
+    '<span class="ts">[00:00.291]</span> <span class="fail">ROLLBACK</span>\n' +
+    '<span class="ts">[00:00.293]</span> pedido #4473 → status: <span class="ok">PENDENTE</span> (inalterado)\n' +
+    '<span class="ts">[00:00.295]</span> estoque não reservado · restaurante não notificado\n' +
+    '<span class="ts">[00:00.298]</span> resposta ao app: <span class="ok">502 · pagamento não confirmado</span>\n' +
+    '<span class="ts">[00:00.301]</span> alerta enviado ao time de plantão\n\n' +
+    '<span class="ok">■ nenhuma cobrança · nenhum dado exposto · nenhum estado inconsistente</span>\n' +
+    '<span class="dim">um sistema fail-open teria marcado o pedido como PAGO aqui.</span>';
+
+  var tlsBtn = document.getElementById("tlsBtn");
+  tlsBtn.addEventListener("click", function () {
+    tlsBtn.setAttribute("aria-pressed", "true");
+    tlsBtn.textContent = "Executando…";
+    typeInto(document.getElementById("tlsLog"), TLS, function () {
+      tlsBtn.textContent = "Rodar novamente";
+      tlsBtn.setAttribute("aria-pressed", "false");
+    });
+  });
+})();
+</script>
+</body>
+</html>

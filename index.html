@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O Guarda-Volumes do FoodFast</title>
+<meta name="description" content="Como o FoodFast protege o cartão de quem pede lanche — explicado sem palavra difícil. Grupo 5, Compliance, FAMINAS.">
+<meta property="og:title" content="O Guarda-Volumes do FoodFast">
+<meta property="og:description" content="A explicação sem enrolação de como a gente protege o cartão de quem pede lanche.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎟️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+  :root {
+    --paper:      #F1F4F2;
+    --surface:    #FFFFFF;
+    --tint:       #E4EFE9;
+    --tint-warn:  #FBEEE9;
+    --ink:        #131B19;
+    --ink-2:      #3C4A46;
+    --muted:      #6B7A74;
+    --line:       #D2DCD7;
+    --accent:     #0B5D4E;
+    --accent-2:   #10826B;
+    --on-accent:  #F2F7F5;
+    --exposed:    #A8321F;
+
+    --font-sans:  "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-mono:  "IBM Plex Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0C1211;
+      --surface:    #141E1B;
+      --tint:       #152A24;
+      --tint-warn:  #2B1613;
+      --ink:        #EAEFED;
+      --ink-2:      #B7C3BF;
+      --muted:      #7F8F89;
+      --line:       #27352F;
+      --accent:     #57D3B2;
+      --accent-2:   #85E8CD;
+      --on-accent:  #08211B;
+      --exposed:    #FF8168;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0C1211;
+    --surface:    #141E1B;
+    --tint:       #152A24;
+    --tint-warn:  #2B1613;
+    --ink:        #EAEFED;
+    --ink-2:      #B7C3BF;
+    --muted:      #7F8F89;
+    --line:       #27352F;
+    --accent:     #57D3B2;
+    --accent-2:   #85E8CD;
+    --on-accent:  #08211B;
+    --exposed:    #FF8168;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body, h1, h2, h3, p, figure, blockquote, ul, li, pre { margin: 0; }
+  ul { padding: 0; list-style: none; }
+  img, svg { max-width: 100%; display: block; }
+  button { font: inherit; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1.66;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 22px; }
+
+  h1, h2, h3, .sans { font-family: var(--font-sans); letter-spacing: -0.02em; text-wrap: balance; }
+  h1 { font-size: clamp(2.15rem, 6.4vw, 3.15rem); font-weight: 700; line-height: 1.08; }
+  h2 { font-size: clamp(1.5rem, 4.2vw, 1.95rem); font-weight: 700; line-height: 1.16; }
+  h3 { font-size: 1.15rem; font-weight: 600; line-height: 1.3; }
+
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---- rhythm ---- */
+  section { padding: 54px 0; border-top: 1px solid var(--line); }
+  .stack { display: flex; flex-direction: column; gap: 20px; }
+  .stack-tight { display: flex; flex-direction: column; gap: 12px; }
+
+  header.hero { padding: 72px 0 58px; }
+  .lede { font-size: 1.2rem; color: var(--ink-2); }
+
+  .punch {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: clamp(1.45rem, 4.6vw, 2.1rem);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: var(--accent);
+    text-wrap: balance;
+  }
+
+  /* ---- analogia ---- */
+  .analogy {
+    background: var(--tint);
+    border-radius: 6px;
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .analogy .tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .analogy p { color: var(--ink-2); }
+
+  /* ---- o cartão surpresa ---- */
+  .carta {
+    border-left: 3px solid var(--accent);
+    padding: 2px 0 2px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .carta .tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .carta q { color: var(--ink-2); font-style: italic; font-size: 1.02rem; }
+  .carta .traducao { color: var(--ink); font-size: 1.02rem; }
+
+  /* ---- mapa da analogia ---- */
+  .map { display: flex; flex-direction: column; gap: 2px; }
+  .map-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 14px;
+    align-items: center;
+    background: var(--surface);
+    padding: 13px 16px;
+    font-size: 0.95rem;
+  }
+  .map-row:first-child { border-radius: 5px 5px 0 0; }
+  .map-row:last-child { border-radius: 0 0 5px 5px; }
+  .map-row .arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; }
+  .map-row .real { color: var(--ink); font-weight: 600; font-family: var(--font-sans); font-size: 0.92rem; }
+  .map-row .life { color: var(--ink-2); }
+
+  /* ---- termo técnico ---- */
+  .termo {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 9px 14px;
+    color: var(--muted);
+    width: fit-content;
+    max-width: 100%;
+  }
+  .termo b { color: var(--accent); font-weight: 500; }
+
+  /* ---- passos ---- */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .st {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 16px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+    align-items: start;
+  }
+  .st:last-child { border-bottom: 1px solid var(--line); }
+  .st-n {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--accent);
+    line-height: 1.35;
+  }
+  .st p { color: var(--ink-2); font-size: 1rem; }
+  .st .strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- simuladores ---- */
+  .sim-btn {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 14px 24px;
+    cursor: pointer;
+    transition: background 0.18s ease;
+    width: fit-content;
+  }
+  .sim-btn:hover { background: var(--accent-2); }
+
+  .panels { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 760px) { .panels { grid-template-columns: 1fr 1fr; } }
+
+  .panel { border-radius: 6px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+  .panel-head { padding: 14px 16px; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; }
+  .panel-hot .panel-head { background: var(--tint-warn); color: var(--exposed); }
+  .panel-cold .panel-head { background: var(--tint); color: var(--accent); }
+  .panel-head small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 2px; font-family: var(--font-serif); }
+
+  .dump {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.8;
+    padding: 15px 16px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--ink-2);
+    min-height: 170px;
+  }
+  .dump .hot { color: var(--exposed); font-weight: 500; }
+  .dump .cold { color: var(--accent); font-weight: 500; }
+  .dump .dim { color: var(--muted); }
+  .idle { color: var(--muted); font-family: var(--font-serif); font-size: 0.9rem; }
+
+  .verdict {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 4vw, 1.75rem);
+    letter-spacing: -0.02em;
+    line-height: 1.22;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.5s ease 0.2s;
+    text-wrap: balance;
+  }
+  .verdict.show { opacity: 1; }
+
+  .log {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.9;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    white-space: pre;
+    min-height: 210px;
+    color: var(--ink-2);
+  }
+  .log .ok { color: var(--accent); }
+  .log .fail { color: var(--exposed); font-weight: 500; }
+  .log .ts { color: var(--muted); }
+
+  /* ---- lei ---- */
+  .lei {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lei h3 { color: var(--ink); }
+  .lei p { color: var(--ink-2); font-size: 1rem; }
+  .lei .art {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ---- comparação lado a lado ---- */
+  .versus { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 700px) { .versus { grid-template-columns: 1fr 1fr; } }
+  .vs-card { border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .vs-bad  { background: var(--tint-warn); }
+  .vs-good { background: var(--tint); }
+  .vs-card h3 { font-size: 1rem; }
+  .vs-bad h3  { color: var(--exposed); }
+  .vs-good h3 { color: var(--accent); }
+  .vs-card p { font-size: 0.98rem; color: var(--ink-2); }
+
+  /* ---- fim ---- */
+  .close { padding: 60px 0 26px; border-top: 1px solid var(--line); }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 13px 20px;
+    width: fit-content;
+  }
+  .switch:hover { border-color: var(--accent); }
+
+  footer { padding: 20px 0 60px; }
+  footer p { font-size: 0.85rem; color: var(--muted); font-family: var(--font-sans); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero stack">
+    <p class="eyebrow">Grupo 5 &middot; Compliance &middot; FAMINAS</p>
+    <h1>Como a gente protege o cartão de quem pede lanche</h1>
+    <p class="lede">Sem palavra difícil. Se você entender esta página, você entendeu o trabalho inteiro.</p>
+  </header>
+
+  <!-- 1 -->
+  <section class="stack">
+    <p class="eyebrow">O problema</p>
+    <h2>A pergunta que caiu pra gente</h2>
+    <p>O FoodFast é um aplicativo de entrega de comida pra universitário. Pra pagar o lanche, a pessoa digita o número do cartão dela no app.</p>
+    <p>Aí vem a parte assustadora: <span class="sans" style="font-weight:600; color:var(--ink)">e se alguém invadir o sistema e roubar o cartão de todo mundo de uma vez?</span></p>
+
+    <div class="carta">
+      <span class="tag">O cartão surpresa que caiu pro nosso grupo</span>
+      <q>O sistema vai integrar uma API de pagamento de terceiros que vai armazenar os dados do cartão de crédito. A LGPD e o PCI-DSS entram em choque se os dados trafegarem sem criptografia. Como a arquitetura de microsserviços de vocês isola esse risco?</q>
+      <p class="traducao">Em português: <strong>vocês vão contratar uma empresa de fora pra guardar o cartão das pessoas. Como vocês garantem que isso não vira uma tragédia?</strong></p>
+    </div>
+
+    <p>Nosso trabalho foi responder isso. E a resposta cabe em uma frase.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="stack">
+    <p class="eyebrow">A resposta</p>
+    <p class="punch">A gente não guarda o cartão de ninguém.</p>
+    <p>Não existe segurança melhor do que não ter o que ser roubado. Se o número do cartão nunca entra no nosso sistema, ele não pode vazar do nosso sistema.</p>
+    <p>Parece simples demais pra ser verdade. Mas é exatamente assim que as empresas grandes fazem — e tem até um nome pra isso.</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="stack">
+    <p class="eyebrow">A analogia</p>
+    <h2>É igual guarda-volumes de parque aquático</h2>
+
+    <div class="analogy">
+      <span class="tag">Pensa assim</span>
+      <p>Você chega no parque aquático e não quer andar com a carteira no bolso — vai molhar, vai cair, alguém pode pegar.</p>
+      <p>Então você deixa a carteira no <strong>guarda-volumes</strong> e sai de lá com uma <strong>pulseirinha numerada</strong>.</p>
+      <p>Agora imagina que alguém rouba sua pulseirinha na fila do tobogã. E daí? Aquele número não vale nada fora dali. Não compra nada, não abre nada. E o mais importante: <strong>sua carteira nunca esteve com você no parque</strong> — então nem se te revistarem inteiro alguém acha ela.</p>
+    </div>
+
+    <p>No nosso sistema é a mesma coisa, trocando as peças:</p>
+
+    <div class="map">
+      <div class="map-row"><span class="life">A sua carteira</span><span class="arrow">→</span><span class="real">O número do cartão</span></div>
+      <div class="map-row"><span class="life">O guarda-volumes do parque</span><span class="arrow">→</span><span class="real">A empresa de pagamento</span></div>
+      <div class="map-row"><span class="life">A pulseirinha numerada</span><span class="arrow">→</span><span class="real">Um código sem valor nenhum</span></div>
+      <div class="map-row"><span class="life">O parque</span><span class="arrow">→</span><span class="real">O app FoodFast</span></div>
+    </div>
+
+    <p>A empresa de pagamento é tipo um Mercado Pago, PagSeguro ou Stripe. É o negócio deles guardar cartão — eles têm cofre, auditoria, gente especializada. A gente não tem nada disso, e é justamente por isso que a gente não deve guardar.</p>
+
+    <span class="termo">nome técnico: <b>tokenização</b></span>
+  </section>
+
+  <!-- 4 -->
+  <section class="stack">
+    <p class="eyebrow">Na prática</p>
+    <h2>A Ana pede um X-salada</h2>
+
+    <div class="steps">
+      <div class="st">
+        <span class="st-n">1</span>
+        <div class="stack-tight">
+          <p><span class="strong">A Ana digita o cartão no app.</span> Mas aquele campo não é nosso — é uma janelinha emprestada da empresa de pagamento, encaixada dentro do nosso app.</p>
+        </div>
+      </div>
+      <div class="st">
+        <span class="st-n">2</span>
+        <div class="stack-tight">
+          <p><span class="strong">O número vai direto pra empresa de pagamento.</span> Trancado a sete chaves no caminho. E olha o detalhe: ele <em>nem passa</em> pelo nosso sistema. Nem de raspão.</p>
+        </div>
+      </div>
+      <div class="st">
+        <span class="st-n">3</span>
+        <div class="stack-tight">
+          <p><span class="strong">Eles guardam o cartão no cofre deles</span> e mandam pra gente só um codigozinho — a pulseirinha. Algo como <code style="font-family:var(--font-mono); font-size:0.88em; color:var(--accent)">tok_9f8a3b7c2e</code>.</p>
+        </div>
+      </div>
+      <div class="st">
+        <span class="st-n">4</span>
+        <div class="stack-tight">
+          <p><span class="strong">A gente guarda só esse codigozinho.</span> Se você abrir o nosso banco de dados agora e procurar por número de cartão, não tem. Não é que está escondido: não existe.</p>
+        </div>
+      </div>
+    </div>
+
+    <p>Quando a Ana pedir de novo semana que vem, a gente manda a pulseirinha pra empresa de pagamento e fala "cobra dela". Eles sabem qual cartão é. A gente não precisa saber.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="stack">
+    <p class="eyebrow">A prova</p>
+    <h2>E se roubarem nosso banco de dados inteiro?</h2>
+    <p>A gente podia só falar "confia, tá seguro". Melhor você mesmo ver. Aperta o botão e compare o que o ladrão leva embora nos dois jeitos de construir o sistema.</p>
+
+    <button class="sim-btn" id="breachBtn">Simular o roubo do banco de dados</button>
+
+    <div class="panels">
+      <div class="panel panel-hot">
+        <div class="panel-head">Do jeito errado<small>tudo guardado no mesmo lugar</small></div>
+        <pre class="dump" id="dumpHot"><span class="idle">Aperta o botão aí em cima.</span></pre>
+      </div>
+      <div class="panel panel-cold">
+        <div class="panel-head">Do nosso jeito<small>cartão nenhum pra roubar</small></div>
+        <pre class="dump" id="dumpCold"><span class="idle">Aperta o botão aí em cima.</span></pre>
+      </div>
+    </div>
+
+    <p class="verdict" id="verdict">O ladrão levou o banco de dados inteiro. E não levou nada.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="stack">
+    <p class="eyebrow">A segunda proteção</p>
+    <h2>Gavetas separadas, chaves diferentes</h2>
+
+    <div class="analogy">
+      <span class="tag">Pensa assim</span>
+      <p>Imagina uma casa onde tudo fica numa gaveta só: documento, dinheiro, chave do carro, cartão. O ladrão abre <em>uma</em> gaveta e leva sua vida inteira.</p>
+      <p>Agora imagina cada coisa numa gaveta diferente, e a chave de uma não abre a outra. O ladrão abre uma gaveta e leva só o que tinha ali dentro.</p>
+    </div>
+
+    <p>O sistema do FoodFast é dividido em pedaços independentes. O pedaço que cuida de pagamento é uma gaveta trancada só dele. O pedaço que cuida do perfil do usuário <strong>não tem a chave</strong> da gaveta de pagamento — nem se quisesse, nem se der um bug ali.</p>
+
+    <p>Isso importa porque quase todo vazamento famoso começou com uma falha bobinha num canto qualquer do sistema. Se tudo estivesse na mesma gaveta, uma falha bobinha vazaria tudo.</p>
+
+    <span class="termo">nome técnico: <b>microsserviços com bancos de dados isolados</b></span>
+  </section>
+
+  <!-- 7 -->
+  <section class="stack">
+    <p class="eyebrow">A terceira proteção</p>
+    <h2>O Ctrl+Z do sistema</h2>
+
+    <p>Sabe quando você tá digitando um texto, faz besteira, e aperta Ctrl+Z? Volta tudo como estava antes.</p>
+
+    <p>Nosso sistema faz igualzinho. Se na hora de cobrar a Ana a conexão segura com a empresa de pagamento falhar por qualquer motivo, ele <strong>não</strong> fala "ah, deixa passar". Ele volta atrás: o pedido continua como <em>não pago</em>, ninguém é cobrado, o restaurante não começa a fazer o lanche, nada fica pela metade.</p>
+
+    <div class="versus">
+      <div class="vs-card vs-bad">
+        <h3>Sistema mal feito</h3>
+        <p>Deu erro? Marca como pago mesmo assim e resolve depois. É assim que aparece cobrança errada, pedido fantasma e dado vazando sem ninguém perceber.</p>
+      </div>
+      <div class="vs-card vs-good">
+        <h3>O nosso</h3>
+        <p>Na dúvida, não confirma nada. Errar deixando de vender é chato. Errar cobrando alguém e vazando o dado dela é crime.</p>
+      </div>
+    </div>
+
+    <button class="sim-btn" id="tlsBtn">Ver o que acontece quando dá erro</button>
+    <pre class="log" id="tlsLog"><span class="idle">Aperta o botão aí em cima.</span></pre>
+
+    <span class="termo">nome técnico: <b>rollback</b> &middot; e o sistema "falha fechado"</span>
+  </section>
+
+  <!-- 7.5 -->
+  <section class="stack">
+    <p class="eyebrow">A outra regra</p>
+    <h2>Não é só a lei brasileira que manda aqui</h2>
+
+    <p>Além da LGPD existe um regulamento feito pelas próprias empresas de cartão — Visa, Mastercard e companhia. O nome dele é <strong>PCI-DSS</strong>.</p>
+
+    <p>Não é lei, é contrato. Mas na prática pega igual ou pior: quem guarda número de cartão e não segue o regulamento simplesmente perde o direito de aceitar cartão. Acabou o negócio, no mesmo dia.</p>
+
+    <div class="analogy">
+      <span class="tag">E aqui está o pulo do gato</span>
+      <p>Quem guarda cartão precisa obedecer <strong>duas</strong> regras pesadas ao mesmo tempo: a LGPD e o PCI-DSS. Cofre de verdade, auditoria todo ano, gente especializada contratada. Coisa de empresa grande, com dinheiro grande.</p>
+      <p>Quem <strong>não</strong> guarda cartão não precisa de quase nada disso. E não é porque burlou a regra — é porque a regra não se aplica a quem não tem o dado.</p>
+    </div>
+
+    <p>Uma startup montada por estudante não tem dinheiro pra construir esse cofre. Então a gente não construiu: a gente contratou quem já tem um.</p>
+
+    <span class="termo">o cartão dizia que <b>LGPD e PCI-DSS entram em choque</b> — e entram mesmo, mas só se o cartão ficar com a gente</span>
+  </section>
+
+  <!-- 8 -->
+  <section class="stack">
+    <p class="eyebrow">A lei</p>
+    <h2>Por que a gente é obrigado a fazer assim</h2>
+
+    <p>A LGPD é a lei brasileira que diz o que empresa pode e não pode fazer com dado de pessoa. Ela tem duas regras que decidem tudo no nosso caso.</p>
+
+    <div class="lei">
+      <h3>1. Só guarde o que você realmente precisa</h3>
+      <p>A gente precisa cobrar a Ana. Pra isso, a pulseirinha resolve. Então o número do cartão não precisa estar aqui — e se não precisa, a lei diz que <strong>não pode</strong> estar. Guardar dado "por via das dúvidas" é ilegal.</p>
+      <p class="art">LGPD &middot; Art. 6º, III — princípio da necessidade</p>
+    </div>
+
+    <div class="lei">
+      <h3>2. Contratar terceiro não passa a culpa pra frente</h3>
+      <p>Esta é a que assusta: se a empresa de pagamento que a gente contratou vazar os dados, <strong>a gente responde junto com ela</strong>. Não adianta apontar o dedo e dizer "foi o outro".</p>
+      <p>É por isso que a gente não escolhe qualquer empresa — escolhe uma certificada, com contrato escrito dizendo como ela pode tratar o dado. A escolha é nossa, a responsabilidade também.</p>
+      <p class="art">LGPD &middot; Art. 42 — responsabilidade</p>
+    </div>
+
+    <h3 style="margin-top:10px">E o resto da lei que a gente cumpriu</h3>
+    <p>Cada decisão que a gente tomou responde a um pedaço da LGPD. Sem decoreba: é só ler a coluna da esquerda e ver de onde ela veio.</p>
+
+    <div class="map">
+      <div class="map-row"><span class="life">Guardar só a pulseirinha, nunca o cartão</span><span class="arrow">→</span><span class="real">Art. 6º, III</span></div>
+      <div class="map-row"><span class="life">Trancar tudo e separar as gavetas</span><span class="arrow">→</span><span class="real">Art. 6º, VII e Art. 46</span></div>
+      <div class="map-row"><span class="life">O Ctrl+Z: prevenir antes de dar errado</span><span class="arrow">→</span><span class="real">Art. 6º, VIII</span></div>
+      <div class="map-row"><span class="life">Quem decide é a gente, a empresa de pagamento só executa</span><span class="arrow">→</span><span class="real">Art. 5º, VI e VII</span></div>
+      <div class="map-row"><span class="life">Se o terceiro vazar, a gente responde junto</span><span class="arrow">→</span><span class="real">Art. 42</span></div>
+      <div class="map-row"><span class="life">Se vazar, avisar a ANPD e as pessoas afetadas</span><span class="arrow">→</span><span class="real">Art. 48</span></div>
+      <div class="map-row"><span class="life">A pessoa pode pedir os dados dela de volta, ou mandar apagar</span><span class="arrow">→</span><span class="real">Art. 18</span></div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="stack">
+    <p class="eyebrow">As duas palavras chiques</p>
+    <h2>O que elas querem dizer, sem enrolação</h2>
+
+    <div class="lei">
+      <h3>Privacy by Design</h3>
+      <p>Quer dizer: <strong>pensar em segurança desde o primeiro dia, não no último.</strong></p>
+      <p>É a diferença entre construir a casa já com a tranca na porta, ou terminar a casa toda e depois ficar procurando onde encaixar uma tranca. O segundo jeito sempre fica torto.</p>
+      <p>No nosso caso: a decisão de não guardar o cartão foi tomada quando a gente ainda estava escrevendo o que o sistema <em>ia</em> fazer. Não foi um remendo depois de pronto.</p>
+    </div>
+
+    <div class="lei">
+      <h3>DevSecOps</h3>
+      <p>Quer dizer: <strong>um robô que confere a segurança toda vez que alguém mexe no código.</strong></p>
+      <p>Parecido com o corretor ortográfico que sublinha em vermelho quando você escreve errado — só que pra segurança. Se alguém do time, sem querer, escrever um código que salva um número de cartão, o robô barra antes de aquilo ir pro ar.</p>
+      <p>Porque adianta pouco fazer tudo certo hoje se daqui a dois meses alguém desfaz sem perceber.</p>
+    </div>
+  </section>
+
+  <div class="close stack">
+    <p class="punch">Chegou até aqui? Então você entendeu o nosso trabalho inteiro.</p>
+    <p>Guarda esse link. E se quiser cavar mais fundo — os detalhes técnicos, os artigos completos da lei, o desenho do banco de dados — está tudo na outra versão:</p>
+    <a class="switch" href="./tecnico.html">Ver a versão técnica →</a>
+  </div>
+
+  <footer>
+    <p>Grupo 5 &middot; Terceirização e APIs de pagamento &middot; Prof. Lucas de Castro Miguel</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var HOT =
+    '<span class="dim">roubando o banco de dados…</span>\n' +
+    '<span class="dim">tudo estava junto: 48.219 pessoas</span>\n\n' +
+    '<span class="dim">nome             cpf              cartao                cvv</span>\n' +
+    '<span class="hot">Ana Ribeiro      123.456.789-00   4532 1145 8899 0012   342</span>\n' +
+    '<span class="hot">Bruno Tavares    987.654.321-00   5412 7788 1120 4455   907</span>\n' +
+    '<span class="hot">Carla Menezes    456.789.012-00   4024 0071 5566 8890   118</span>\n\n' +
+    '<span class="dim">endereço de casa, tudo que já pediram, onde moram</span>\n' +
+    '<span class="hot">→ tudo levado</span>\n\n' +
+    '<span class="hot">■ dá pra clonar o cartão dessas pessoas hoje</span>';
+
+  var COLD =
+    '<span class="dim">roubando o banco de dados…</span>\n' +
+    '<span class="dim">só a gaveta do pagamento: 3 tabelas</span>\n\n' +
+    '<span class="dim">pedido   pulseirinha       final do cartão</span>\n' +
+    '<span class="cold">#4471    tok_9f8a3b7c2e    ••••  0012</span>\n' +
+    '<span class="cold">#4472    tok_2c7d1e9a44    ••••  4455</span>\n' +
+    '<span class="cold">#4473    tok_5b1f8c0d73    ••••  8890</span>\n\n' +
+    '<span class="dim">tentando abrir a gaveta dos usuários…</span>\n' +
+    '<span class="cold">→ não tem a chave</span>\n' +
+    '<span class="dim">tentando abrir a gaveta dos pedidos…</span>\n' +
+    '<span class="cold">→ não tem a chave</span>\n\n' +
+    '<span class="cold">■ não dá pra comprar nada com isso</span>';
+
+  var TLS =
+    '<span class="ts">agora</span>      Ana aperta "finalizar pedido"\n' +
+    '<span class="ts">+0,00s</span>    pedido #4473 → <span class="ok">ainda não pago</span>\n' +
+    '<span class="ts">+0,01s</span>    ligando pra empresa de pagamento…\n' +
+    '<span class="ts">+0,28s</span>    <span class="fail">deu erro na conexão segura</span>\n' +
+    '<span class="ts">+0,28s</span>    <span class="fail">ligação cortada na hora</span>\n' +
+    '<span class="ts">+0,29s</span>    <span class="fail">Ctrl+Z — desfazendo tudo</span>\n' +
+    '<span class="ts">+0,29s</span>    pedido #4473 → <span class="ok">continua não pago</span>\n' +
+    '<span class="ts">+0,30s</span>    restaurante não foi avisado\n' +
+    '<span class="ts">+0,30s</span>    <span class="ok">app avisa a Ana: tenta de novo</span>\n\n' +
+    '<span class="ok">■ ninguém foi cobrado · nada vazou · nada ficou pela metade</span>\n' +
+    '<span class="dim">um sistema mal feito teria marcado como PAGO aqui.</span>';
+
+  function typeInto(el, html, done) {
+    if (reduce) { el.innerHTML = html; if (done) done(); return; }
+    var lines = html.split("\n"), i = 0;
+    el.innerHTML = "";
+    var id = setInterval(function () {
+      el.innerHTML += lines[i] + "\n";
+      el.scrollTop = el.scrollHeight;
+      i++;
+      if (i >= lines.length) { clearInterval(id); if (done) done(); }
+    }, 60);
+  }
+
+  var breachBtn = document.getElementById("breachBtn");
+  var verdict = document.getElementById("verdict");
+  breachBtn.addEventListener("click", function () {
+    breachBtn.textContent = "Roubando…";
+    verdict.classList.remove("show");
+    typeInto(document.getElementById("dumpHot"), HOT);
+    typeInto(document.getElementById("dumpCold"), COLD, function () {
+      verdict.classList.add("show");
+      breachBtn.textContent = "Rodar de novo";
+    });
+  });
+
+  var tlsBtn = document.getElementById("tlsBtn");
+  tlsBtn.addEventListener("click", function () {
+    tlsBtn.textContent = "Rodando…";
+    typeInto(document.getElementById("tlsLog"), TLS, function () {
+      tlsBtn.textContent = "Rodar de novo";
+    });
+  });
+})();
+</script>
+</body>
+</html>
